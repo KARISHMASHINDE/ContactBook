@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Contact',
     'rest_framework',
+    'rest_framework_simplejwt'
+    
 ]
 
 MIDDLEWARE = [

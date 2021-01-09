@@ -4,6 +4,7 @@ from rest_framework import generics, status
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from Contact.models import ContactDetails
 
 
 
@@ -35,3 +36,17 @@ class MasterLogin(serializers.Serializer):
     def create(self, validated_data):
         user = User.objects.get(username=validated_data['username'])
         return user
+    
+class GetContact(serializers.ModelSerializer):
+    user_id = serializers.CharField(read_only=True)
+    class Meta:
+        model = ContactDetails
+        fields = ['firstname','lastname','email','phone','address','user_id']
+        
+        
+class PostContact(serializers.ModelSerializer):
+    user_id = serializers.CharField(required = False, write_only=True)
+    class Meta:
+        model = ContactDetails
+        fields = ['firstname','lastname','email','phone','address','user_id']
+    

@@ -8,7 +8,7 @@ from rest_framework.status import (HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTT
 from django.http import Http404
 from rest_framework.decorators import api_view
 from django.core.exceptions import ObjectDoesNotExist
-from Contact.serializers import RegistrationSerializer, MasterLogin
+from Contact.serializers import RegistrationSerializer, MasterLogin, GetContact, PostContact
 from Contact.models import ContactDetails
 from rest_framework.permissions import IsAuthenticated
 from Contact.function import  make_pages, get_tokens_for_user, createResponse
@@ -50,18 +50,45 @@ class ContactList(APIView):
 
     def get(self, request, format=None):
         obj = ContactDetails.objects.all()
-        serializer = flexPayAccountDetailPostSerializer(obj, many=True)
-        if serializer:
-            return createResponse(True, "FlexPay Account Found", serializer.data, "data")
-        else:
-            return createResponse(False, "FlexPay Account Not Found", serializer.errors, "errors")
+        pageQuery,pageData=make_pages(obj, 10, request.GET, request.build_absolute_uri())
+        data = GetContact(pageQuery,many=True)       
+        return createResponse(True, "FlexPay Account Found", {"page":pageData,"data":data.data}, "data")
+
         
     def post(self, request, format=None):
-        serializer = smartUpdatePostSerializer(data=request.data)
+        serializer = PostContact(data=request.data)
         if serializer.is_valid():
             serializer.save(user_id=request.user)
             return createResponse(True, "Sucess", serializer.data, 'data')
         return createResponse(False, "Fail", serializer.errors, 'errors')
 
 
+
+class GetContactDetails(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return ContactDetails.objects.get(pk=pk)
+        except ContactDetails.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        obj = self.get_object(pk)
+        serializer = GetContact(obj)
+        return createResponse(True, "Record Found", serializer.data, 'data')
+
+    def put(self, request, pk, format=None):
+        obj = self.get_object(pk)
+        serializer = PostContact(obj, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return createResponse(True, "Record Found", serializer.data, 'data')
+        return createResponse(False, "Record not Found", serializer.errors, 'errors')
+    
+    def delete(self, request, pk, format=None):
+        obj = self.get_object(pk)
+        obj.delete()
+        return createResponse(True, "Success", {"data":"Contact {} deleted".format(pk)}, 'data')
 

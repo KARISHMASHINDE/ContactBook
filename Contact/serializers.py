@@ -13,25 +13,25 @@ class RegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['email','password']
+        fields = ['email','password','username']
     
     def create(self, validated_data):
-        user = User(email=self.validated_data['email'])
+        user = User(email=self.validated_data['email'],username=self.validated_data['username'])
         password = self.validated_data['password']
         user.set_password(password)
         user.save()
         return user
     
 class MasterLogin(serializers.Serializer):
-    email = serializers.CharField(required=True)
+    username = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
 
     def validate(self, attrs):
-        user = authenticate(password=attrs['password'], email=attrs['email'])
+        user = authenticate(password=attrs['password'], username=attrs['username'])
         if not user:
             raise serializers.ValidationError("Invalid credentials")
         return attrs
 
     def create(self, validated_data):
-        user = User.objects.get(email=validated_data['email'])
+        user = User.objects.get(username=validated_data['username'])
         return user

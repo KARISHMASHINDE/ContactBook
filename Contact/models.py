@@ -8,7 +8,7 @@ class ContactDetails(models.Model):
     email = models.EmailField(verbose_name="Email", max_length=100, unique=True)
     phone = models.CharField(verbose_name="Mobile Phone", max_length=12, unique=True)
     address = models.CharField(max_length=100)
-    user_id = models.ForeignKey(User)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return u"%s %s" % (self.firstname, self.lastname)

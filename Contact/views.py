@@ -12,6 +12,10 @@ from Contact.serializers import RegistrationSerializer, MasterLogin, GetContact,
 from Contact.models import ContactDetails
 from rest_framework.permissions import IsAuthenticated
 from Contact.function import  make_pages, get_tokens_for_user, createResponse
+from rest_framework import pagination
+from django.db.models import Q
+from django.core.paginator import Paginator , EmptyPage, PageNotAnInteger
+
 
 
 
@@ -47,14 +51,15 @@ def login(request):
 class ContactList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    def get(self, request,format=None):
+        obj = ContactDetails.objects.all().order_by('id')
+        paginator = Paginator(obj,10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.page(page_number)
+        data = GetContact(page_obj,many=True)       
+        return createResponse(True, "Contact Found", {"page":page_number,"data":data.data}, "data")
 
-    def get(self, request, format=None):
-        obj = ContactDetails.objects.all()
-        pageQuery,pageData=make_pages(obj, 10, request.GET, request.build_absolute_uri())
-        data = GetContact(pageQuery,many=True)       
-        return createResponse(True, "FlexPay Account Found", {"page":pageData,"data":data.data}, "data")
-
-        
+            
     def post(self, request, format=None):
         serializer = PostContact(data=request.data)
         if serializer.is_valid():
@@ -91,4 +96,12 @@ class GetContactDetails(APIView):
         obj = self.get_object(pk)
         obj.delete()
         return createResponse(True, "Success", {"data":"Contact {} deleted".format(pk)}, 'data')
+    
+class SearchContactList(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request,search,format=None):
+        obj = ContactDetails.objects.filter(Q(firstname__icontains=search) | Q(email__icontains=search))
+        data = GetContact(obj,many=True)       
+        return createResponse(True, "Contact Found", {"data":data.data}, "data")
 
